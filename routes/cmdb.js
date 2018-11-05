@@ -16,11 +16,21 @@ router.get('/cmdb/virtualserver/:name', authenticate, async (req, res) => {
       name: id,
     });
 
-    if (!server) {
-        return Promise.reject(res.status(403).send());
-    }
-
     res.send(server[0].name);
+  }
+  catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+router.get('/cmdb/parent/:name', authenticate, async (req, res) => {
+  try {
+    const id = req.params.name;
+    await OS.findOne({
+      name: id,
+    }).populate('osHost').exec((err, os) => {
+      res.send(os);
+    })
   }
   catch (e) {
     res.status(400).send(e);
@@ -36,6 +46,7 @@ router.post('/cmdb/virtualserver', authenticate, async (req, res) => {
       vendor: req.body.vendor,
       model: req.body.model,
       location: req.body.location,
+      state: req.body.state,
       _creator: req.user._id
     });
 
@@ -55,7 +66,8 @@ router.post('/cmdb/os', authenticate, async (req, res) => {
       version: req.body.version,
       location: req.body.location,
       _creator: req.user._id,
-      osHost: req.body.osHost
+      osHost: req.body.osHost,
+      state: req.body.state
     });
 
     const doc = await os.save();
@@ -77,6 +89,39 @@ router.post('/cmdb/pserver', authenticate, async (req, res) => {
   res.send(doc);
   } 
   catch (e) {
+    res.status(400).send(e);
+  }
+});
+
+// DELETE
+
+router.delete('/cmdb/os', authenticate, (req, res) => {
+  const name = req.body.name;
+
+  OS.findOneAndDelete({
+    name
+  }).then((os) => {
+    if (!os) {
+      return res.status(404).send();
+    }
+
+    res.send({ os });
+  }).catch((e) => {
+    res.status(400).send();
+  });
+});
+
+//PATCH
+
+router.patch('/cmdb/os', authenticate, async (req, res) => {
+  try {
+    const name = req.body.name;
+    const state = req.body.state;
+    await OS.findOneAndUpdate({name}, {state});
+    const doc = await OS.find({name});
+    res.send(doc);
+  }
+  catch(e) {
     res.status(400).send(e);
   }
 });

@@ -26,6 +26,12 @@ const vServerSchema = new Schema({
     minlength: 1,
     trim: true
   },
+  state: {
+    type: String,
+    required: true,
+    minlength: 1,
+    trim: true
+  },
   _creator: {
     type: Schema.Types.ObjectId,
     required: true
